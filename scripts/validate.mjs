@@ -1,0 +1,42 @@
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const base=new URL('../',import.meta.url);
+const read=p=>readFileSync(new URL(p,base),'utf8');
+const context=vm.createContext({});
+vm.runInContext(read('dist/data.js')+'\n'+read('dist/dungeon-data.js')+'\n'+read('dist/dungeon-map.js')+`\nthis.guide={STAGES,DUNGEON,EXTRAS,LEDGER,MAP_ROOMS,MAP_EDGES,MAP_PATHS,KEYED_FIRST_ORDER,getDungeonStages};`,context);
+const g=context.guide;
+const steps=[...g.STAGES,...g.DUNGEON,...g.EXTRAS].flatMap(s=>s.steps);
+assert.equal(new Set(steps.map(s=>s.id)).size,steps.length,'Checklist IDs must be unique');
+const ids=new Set(steps.map(s=>s.id));
+for(const q of g.LEDGER)assert(ids.has(q.step),`Missing ledger target ${q.step}`);
+assert.equal(g.LEDGER.length,9);
+const rooms=new Set(g.MAP_ROOMS.map(r=>r.id));
+for(const s of steps){if(s.room)assert(rooms.has(s.room),`Unknown map room ${s.room}`);for(const link of s.sources||[])assert(new URL(link.url).protocol==='https:');}
+const edges=new Set(g.MAP_EDGES.map(([a,b])=>[a,b].sort().join('|')));
+for(const paths of Object.values(g.MAP_PATHS))for(const route of Object.values(paths))for(let i=1;i<route.length;i++)assert(edges.has([route[i-1],route[i]].sort().join('|')),`Route jumps between unconnected rooms: ${route[i-1]} / ${route[i]}`);
+for(const plan of ['keyless','keyed']){
+ const runs=g.getDungeonStages(plan),first=runs[0].steps.map(s=>s.id),last=runs[2].steps.map(s=>s.id);
+ assert.equal(new Set(first).size,first.length);
+ for(const required of ['windsor-talk','kharan-talk','fineous','vault','shadowforge-key','incendius-kill','baelgar','love-pickup','hurley-loot','ribbly-loot'])assert(first.includes(required),`Missing quest on ${plan} route: ${required}`);
+ assert(first.indexOf('fineous')<first.indexOf('shadowforge-key'),'Ironfel must precede key turn-in');
+ assert(first.indexOf('incendius-kill')<first.indexOf('lock-one'));
+ assert(first.indexOf('baelgar')<first.indexOf('lock-one'));
+ assert(last.indexOf('note')<last.indexOf('angerforge-info'));
+ assert(last.indexOf('note')<last.indexOf('argelmach-info'));
+ assert(last.indexOf('argelmach-info')<last.indexOf('jailbreak'));
+ assert(last.indexOf('jailbreak')<last.indexOf('flamelash'));
+ assert(last.indexOf('chalice')<last.indexOf('seven'));
+ assert(last.indexOf('emperor-kill')<last.indexOf('moira-talk'));
+}
+const app=read('dist/app.js'),validation=app.slice(app.indexOf('function validateState('),app.indexOf('\ntry{let saved='));
+vm.runInContext(`const ALL_IDS=new Set(${JSON.stringify([...ids])}); const VIEWS=['route','ledger','dungeon','extras','sources'];\n${validation}\nthis.validate=validateState;`,context);
+const old=context.validate({version:1,checked:{hurley:true,papers:true,emperor:true,'first-bar':true,unrelated:true},notes:'Keep my notes'});
+assert(old.checked.hurley&&old.checked['angerforge-info']&&old.checked['argelmach-info']&&old.checked['moira-talk']&&old.checked['love-pickup']);
+assert(!old.checked.unrelated);assert.equal(old.notes,'Keep my notes');assert.equal(old.version,2);
+assert.throws(()=>context.validate({version:77,checked:{}}));
+for(const file of ['dist/index.html','dist/data.js','dist/app.js','dist/dungeon-data.js','dist/dungeon-map.js','dist/style.css']){
+ const text=read(file);assert(!/appgprj_|C:\\Users/i.test(text),`Private deployment identifier or local path in ${file}`);
+}
+for(const src of [...read('dist/index.html').matchAll(/(?:src|href)="([^"#]+)"/g)].map(m=>m[1]).filter(x=>!/^https?:|^data:/.test(x)))read('dist/'+src);
+console.log(`Validated ${steps.length} unique checks, ${g.MAP_ROOMS.length} map rooms, both route variants, quest sequencing and v1 progress migration.`);

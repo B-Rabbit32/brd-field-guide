@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#131719"><meta name="description" content="Rick’s researched WoW Forever Blackrock Depths pickup route. Level 53 Alliance paladin, Stormwind hearth, persistent step-by-step checklists.">
+  <title>Blackrock Depths · Field Guide</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="#"><span class="brand-icon">✦</span><span>AZEROTH<br><small>FIELD NOTES</small></span></a>
+  <div class="character"><span class="crest">♜</span><div><strong>Rick’s paladin</strong><span>Human · Alliance · Level 53</span></div></div>
+  <div class="side-label">YOUR EXPEDITION</div>
+  <nav aria-label="Guide sections">
+    <button class="nav active" data-view="route"><span>⌖</span> Pickup route <small id="nav-progress">0%</small></button>
+    <button class="nav" data-view="ledger"><span>▤</span> Quest ledger</button>
+    <button class="nav" data-view="dungeon"><span>◇</span> Dungeon map & route</button>
+    <button class="nav" data-view="extras"><span>✧</span> Optional & later</button>
+    <button class="nav" data-view="sources"><span>≡</span> Research & sources</button>
+  </nav>
+  <div class="side-label route-label">PICKUP STAGES</div><div id="stage-nav"></div>
+  <div class="saved"><span id="save-light"></span><span id="save-status">Progress saved on this browser</span></div>
+  <div class="side-actions"><button id="export">Export progress</button><label class="import">Import<input id="import" type="file" accept="application/json"></label></div>
+  <button class="reset" id="reset">Reset checklist</button>
+</aside>
+<main>
+  <header class="topbar"><span>THE EASTERN KINGDOMS / BLACKROCK MOUNTAIN</span><span class="edition">WoW Forever <b>·</b> Nov 23, 2026</span></header>
+  <section class="hero">
+    <div class="hero-copy"><p class="eyebrow">YOUR LEVEL 53 QUEST-PICKUP PLAN</p><h1>Blackrock<br><em>Depths.</em></h1><p class="lede">Every pickup. The right order.<br>Fewer trips across Azeroth.</p><div class="pills"><span>♜ Alliance paladin</span><span>⌂ Stormwind hearth</span><span>✓ Flight paths unlocked</span></div></div>
+    <svg class="mountain" viewBox="0 0 600 400" role="img" aria-label="Illustration of Blackrock Mountain, with lava beneath its gates"><defs><linearGradient id="lava" x2="0" y2="1"><stop stop-color="#efab68"/><stop offset="1" stop-color="#963e2e"/></linearGradient><radialGradient id="glow"><stop stop-color="#b75431" stop-opacity=".36"/><stop offset="1" stop-color="#b75431" stop-opacity="0"/></radialGradient></defs><circle cx="345" cy="250" r="200" fill="url(#glow)"/><g fill="none" stroke="#ad8b62" opacity=".16"><circle cx="342" cy="200" r="152"/><circle cx="342" cy="200" r="170"/><path d="M130 200h420M342 10v370"/></g><path d="M66 344 190 160 245 219 315 76 347 120 375 93 433 208 468 178 580 344Z" fill="#272c2d" stroke="#55534a"/><path d="m190 160 26 131 29-72 70-143-12 174 44-130-6 120 34-147 30 212 28-97 70 136H66Z" fill="#1c2224"/><path d="m315 76-14 59 24-11 22-4 28-27-19 76-36-18-27 13Z" fill="#747065" opacity=".65"/><path d="m330 150-5 48 18 20-14 38 28 39-7 56h-31l8-51-20-36 20-45-14-19 11-47Z" fill="url(#lava)" opacity=".8"/><path d="M215 338v-92l70-29 70 29v92" fill="#111719" stroke="#776a51" stroke-width="2"/><path d="M251 338v-67q34-47 68 0v67" fill="#bd7041"/><path d="M262 338v-63q24-33 46 0v63" fill="#1b1715"/><path d="M207 247h155M214 260h36M320 260h34M222 235v-24M348 237v-24" stroke="#967c50" stroke-width="3"/><path d="M285 330c-40 20-8 33 42 37s8 13-22 30h99c8-18-10-30-51-34s-58-16-44-33" fill="url(#lava)" opacity=".75"/><path d="M49 344h510" stroke="#75624e"/><g fill="#bc7f4d"><circle cx="310" cy="57" r="2"/><circle cx="351" cy="39" r="2"/><circle cx="389" cy="58" r="1.5"/><circle cx="335" cy="16" r="1.5"/></g><text x="489" y="372" fill="#a38b67" font-size="11" letter-spacing="3">THE DEPTHS</text></svg>
+  </section>
+  <section class="dashboard" aria-label="Preparation progress"><div><span class="stat-label">PREPARATION</span><strong id="progress-text">0 / 0 steps</strong><div class="progress-track"><div id="progress-bar"></div></div></div><div><span class="stat-label">QUESTS TO ENTER WITH</span><strong id="ready-count">0 <small>/ 9 ready</small></strong><span class="stat-foot">After prerequisites & Pyron</span></div><div><span class="stat-label">ROUTE ANCHOR</span><strong>Ironforge</strong><span class="stat-foot">Save your hearth for Stormwind</span></div></section>
+  <section class="next" id="next-card"><div><span class="eyebrow">NEXT UNCHECKED STEP</span><strong id="next-title"></strong></div><button id="resume" class="primary">Continue route</button></section>
+  <div class="view" id="view-route">
+    <div class="section-heading"><div><p class="eyebrow">PREPARE BEFORE YOU ZONE IN</p><h2>The pickup route</h2></div><label class="toggle"><input type="checkbox" id="hide-done"> Hide completed</label></div>
+    <p class="intro">Start in Ironforge from wherever you are. If you’re in Stormwind, take the Deeprun Tram. This route batches the two mandatory city loops and leaves Flame Crest until Ragged John’s story is available. Check a step only after you do it in game.</p>
+    <div class="route-map" id="route-map" aria-label="Route overview"></div>
+    <details class="geo"><summary>See the Burning Steppes route sketch <span>Two passes, timed to the quest chain</span></summary><svg viewBox="0 0 820 340" role="img" aria-label="Schematic of Burning Steppes. First field loop: Morgan’s Vigil, eastern dragonkin, Cyrus, Thaurissan relics, Blackrock Mountain, then Morgan’s Vigil. Later, Morgan’s Vigil to Flame Crest and back."><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#748275" stroke-opacity=".14"/></pattern></defs><rect width="820" height="340" fill="#1b2524"/><rect x="30" y="30" width="760" height="280" fill="url(#grid)"/><path d="M650 255 712 180 735 91 428 119 120 145 650 255" fill="none" stroke="#cfb177" stroke-width="3"/><path d="M650 255Q625 125 455 69Q555 100 650 255" fill="none" stroke="#91b5c1" stroke-width="2" stroke-dasharray="7 6"/><g fill="#17201d" stroke="#cfb177" stroke-width="2"><circle cx="650" cy="255" r="8"/><circle cx="712" cy="180" r="7"/><circle cx="735" cy="91" r="8"/><circle cx="428" cy="119" r="8"/><circle cx="120" cy="145" r="8"/></g><circle cx="455" cy="69" r="8" fill="#17201d" stroke="#91b5c1" stroke-width="2"/><g fill="#ede5d3" font-family="system-ui,sans-serif" font-size="15"><text x="553" y="286">Morgan’s Vigil</text><text x="613" y="211">Dragonkin</text><text x="653" y="66">Cyrus’s cave</text><text x="285" y="146">Thaurissan relics</text><text x="48" y="120">Blackrock Mountain</text><text x="379" y="46" fill="#a9ceda">Flame Crest</text></g><g fill="#a7b2a8" font-family="system-ui,sans-serif" font-size="12"><text x="60" y="177">Pyron + Franclorn</text><text x="32" y="28">NORTH</text><text x="32" y="310">Schematic · not to scale · use NPC coordinates in the steps</text></g></svg><div class="map-legend"><span><i></i>First field loop, before the city deliveries</span><span><i class="blue"></i>Later: Ragged John + Flame Crest pickups, then back to Maxwell</span></div></details>
+    <div class="notice"><b>You cannot pick up every BRD quest before your first entry.</b> Windsor and Kharan unlock follow-ups inside. At 53, prepare the nine entry quests below; plan a key-and-bar visit, an outside turn-in and ingredient loop, then your deeper run. “Efficient” here means reducing avoidable travel under your known flight paths, not a timed speedrun.</div>
+    <div id="route-stages"></div>
+    <div class="finish-card"><span>✦</span><div><h3>Prepared for the Depths</h3><p>Check the ledger, then open “Dungeon map & route.” Agree on a quest run with your party—Arena-only runs won’t cover this list.</p></div><button data-view="ledger" class="secondary">Review quest ledger</button></div>
+  </div>
+  <div class="view" id="view-ledger" hidden></div>
+  <div class="view" id="view-dungeon" hidden></div>
+  <div class="view" id="view-extras" hidden></div>
+  <div class="view" id="view-sources" hidden></div>
+  <footer>Prepared for Rick · WoW Forever · Research checked November 23, 2026<br><span>Independent fan guide. Quest names and world belong to Blizzard Entertainment. Coordinates are approximate.</span></footer>
+</main>
+<dialog id="reset-dialog"><h2>Start the checklist over?</h2><p>This clears this guide’s saved checks and notes in this browser. Export first if you want a backup.</p><div class="dialog-actions"><button id="cancel-reset" class="secondary">Keep progress</button><button id="confirm-reset" class="primary">Reset all progress</button></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="data.js"></script><script src="dungeon-data.js"></script><script src="dungeon-map.js"></script><script src="app.js"></script>
+</body></html>
