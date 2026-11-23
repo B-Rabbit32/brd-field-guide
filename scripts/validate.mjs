@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const base=new URL('../',import.meta.url);
 const read=p=>readFileSync(new URL(p,base),'utf8');
 const context=vm.createContext({});
-vm.runInContext(read('dist/data.js')+'\n'+read('dist/dungeon-data.js')+'\n'+read('dist/dungeon-map.js')+`\nthis.guide={STAGES,DUNGEON,EXTRAS,LEDGER,MAP_ROOMS,MAP_EDGES,MAP_PATHS,KEYED_FIRST_ORDER,getDungeonStages};`,context);
+vm.runInContext(read('dist/data.js')+'\n'+read('dist/dungeon-data.js')+'\n'+read('dist/dungeon-map.js')+`\nthis.guide={STAGES,DUNGEON,EXTRAS,LEDGER,MAP_ROOMS,MAP_EDGES,MAP_PATHS,KEYED_FIRST_ORDER,getDungeonStages,getDungeonProgress,roomStopNumbers,drawDungeonMap};`,context);
 const g=context.guide;
 const steps=[...g.STAGES,...g.DUNGEON,...g.EXTRAS].flatMap(s=>s.steps);
 assert.equal(new Set(steps.map(s=>s.id)).size,steps.length,'Checklist IDs must be unique');
@@ -30,6 +30,28 @@ for(const plan of ['keyless','keyed']){
  assert(last.indexOf('emperor-kill')<last.indexOf('moira-talk'));
 }
 const app=read('dist/app.js'),validation=app.slice(app.indexOf('function validateState('),app.indexOf('\ntry{let saved='));
+// Map numbers must remain the checklist ordinals, including repeat room visits.
+const numbers=(phase,plan,room)=>g.roomStopNumbers(g.getDungeonProgress(phase,plan,{}).steps.filter(s=>s.room===room));
+assert.equal(numbers('visit-one','keyless','prison'),'02–04');
+assert.equal(numbers('visit-one','keyless','baelgar'),'12–13');
+assert.equal(numbers('visit-one','keyed','baelgar'),'05–06');
+assert.equal(numbers('visit-two','keyless','prison'),'01, 05–06');
+for(const plan of ['keyless','keyed'])for(const stage of g.getDungeonStages(plan)){
+ const checked={};
+ for(let i=0;i<stage.steps.length;i++){
+  const progress=g.getDungeonProgress(stage.id,plan,checked);
+  assert.equal(progress.next.id,stage.steps[i].id);
+  assert.equal(progress.next.number,i+1);
+  const svg=g.drawDungeonMap(stage.id,plan,checked,'prison');
+  assert.equal((svg.match(/aria-current="step"/g)||[]).length,progress.next.room?1:0,'Only the next mapped objective is highlighted');
+  if(progress.next.room)assert(svg.includes(`NEXT ${String(i+1).padStart(2,'0')}</text>`));
+  checked[progress.next.id]=true;
+ }
+ assert.equal(g.getDungeonProgress(stage.id,plan,checked).next,undefined);
+ assert(!g.drawDungeonMap(stage.id,plan,checked,'prison').includes('aria-current="step"'));
+ delete checked[stage.steps[0].id];
+ assert.equal(g.getDungeonProgress(stage.id,plan,checked).next.id,stage.steps[0].id,'Unchecking an earlier step restores it as next');
+}
 vm.runInContext(`const ALL_IDS=new Set(${JSON.stringify([...ids])}); const VIEWS=['route','ledger','dungeon','extras','sources'];\n${validation}\nthis.validate=validateState;`,context);
 const old=context.validate({version:1,checked:{hurley:true,papers:true,emperor:true,'first-bar':true,unrelated:true},notes:'Keep my notes'});
 assert(old.checked.hurley&&old.checked['angerforge-info']&&old.checked['argelmach-info']&&old.checked['moira-talk']&&old.checked['love-pickup']);
@@ -39,4 +61,4 @@ for(const file of ['dist/index.html','dist/data.js','dist/app.js','dist/dungeon-
  const text=read(file);assert(!/appgprj_|C:\\Users/i.test(text),`Private deployment identifier or local path in ${file}`);
 }
 for(const src of [...read('dist/index.html').matchAll(/(?:src|href)="([^"#]+)"/g)].map(m=>m[1]).filter(x=>!/^https?:|^data:/.test(x)))read('dist/'+src);
-console.log(`Validated ${steps.length} unique checks, ${g.MAP_ROOMS.length} map rooms, both route variants, quest sequencing and v1 progress migration.`);
+console.log(`Validated ${steps.length} unique checks, ${g.MAP_ROOMS.length} map rooms, both route variants, numbered stops, next-objective progression, quest sequencing and v1 progress migration.`);

@@ -6,7 +6,7 @@ const ROUTE_STEPS=STAGES.flatMap(s=>s.steps);
 const VIEWS=['route','ledger','dungeon','extras','sources'];
 const freshState=()=>({version:2,checked:{},notes:'',view:'route',hideDone:false,mapPhase:'visit-one',keyPlan:'keyless'});
 let state=freshState();
-let selectedRoom='prison',mapZoom=100;
+let selectedRoom=null,mapZoom=100;
 let storageAvailable=true;
 function validateState(input){
  if(!input||typeof input!=='object'||![1,2].includes(input.version)||!input.checked||typeof input.checked!=='object')throw new Error('Invalid progress file');
@@ -57,13 +57,18 @@ document.getElementById('view-sources').insertAdjacentHTML('beforeend',`<h3>Dung
 let missingOnly=false;
 function activeDungeonStage(){return getDungeonStages(state.keyPlan).find(s=>s.id===state.mapPhase);}
 function updateDungeon(){
- const stage=activeDungeonStage(),done=stage.steps.filter(s=>state.checked[s.id]).length;
+ const {stage,steps,next}=getDungeonProgress(state.mapPhase,state.keyPlan,state.checked),done=steps.filter(s=>state.checked[s.id]).length;
+ if(!selectedRoom)selectedRoom=next?.room||'prison';
  document.getElementById('key-plan').value=state.keyPlan;
  document.getElementById('key-plan-note').textContent=state.keyPlan==='keyed'?'A party key allows the Highway first, then a climb through Fineous and the Vault to your own key turn-in. This changes visit 1 only.':'No key shortcut is assumed. The first route clears the Arena and explicitly backtracks for your personal key.';
  document.getElementById('run-progress').textContent=`${done} / ${stage.steps.length} checks`;
- const next=stage.steps.find(s=>!state.checked[s.id]);
- document.getElementById('run-next-title').textContent=next?next.title:'All checks on this leg recorded.';
+ const nextTitle=next?`${stopNumber(next.number)} · ${next.title}`:'All checks on this leg recorded.';
+ document.getElementById('run-next-title').textContent=nextTitle;
  document.getElementById('run-resume').disabled=!next;
+ document.getElementById('map-next-summary').textContent=nextTitle;
+ document.getElementById('map-next-location').textContent=next?(next.room?MAP_ROOMS.find(r=>r.id===next.room).label.join(' · '):'Exit / outside follow-up — use Go to objective for directions.'):'Choose another leg to continue.';
+ document.getElementById('map-next').disabled=!next?.room;
+ document.querySelectorAll('#run-checklists .step').forEach(el=>{const current=el.id===`step-${next?.id}`;el.classList.toggle('next-objective',current);if(current)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
  document.querySelectorAll('[data-phase]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.phase===state.mapPhase)));
  for(const s of DUNGEON){const el=document.getElementById(`stage-${s.id}`);el.hidden=s.id!==state.mapPhase;}
  const outside=state.mapPhase==='between-visits';
@@ -73,8 +78,8 @@ function updateDungeon(){
   const scrollLeft=scroller.scrollLeft,scrollTop=scroller.scrollTop;
   canvas.innerHTML=drawDungeonMap(state.mapPhase,state.keyPlan,state.checked,selectedRoom);canvas.style.width=`${mapZoom}%`;
   scroller.scrollLeft=scrollLeft;scroller.scrollTop=scrollTop;
-  const room=MAP_ROOMS.find(r=>r.id===selectedRoom),tasks=stage.steps.filter(s=>s.room===selectedRoom);
-  document.getElementById('room-objectives').innerHTML=`<div class="room-heading"><span class="eyebrow">SELECTED ROOM</span><h3>${room.label[0]}${room.label[1]?' · '+room.label[1]:''}</h3></div>${tasks.length?tasks.map(s=>`<div class="map-objective"><input type="checkbox" id="map-check-${s.id}" data-check="${s.id}" ${state.checked[s.id]?'checked':''}><label for="map-check-${s.id}">${s.title}</label><button data-step="${s.id}">Directions</button></div>`).join(''):'<p class="empty">No checklist objective here on this leg. It may be a corridor, or a stop on the other visit.</p>'}`;
+  const room=MAP_ROOMS.find(r=>r.id===selectedRoom),tasks=steps.filter(s=>s.room===selectedRoom);
+  document.getElementById('room-objectives').innerHTML=`<div class="room-heading"><span class="eyebrow">SELECTED ROOM</span><h3>${room.label[0]}${room.label[1]?' · '+room.label[1]:''}</h3></div>${tasks.length?tasks.map(s=>`<div class="map-objective${s.id===next?.id?' next-objective':''}"><input type="checkbox" id="map-check-${s.id}" data-check="${s.id}" ${state.checked[s.id]?'checked':''}><label for="map-check-${s.id}"><span class="objective-number">${stopNumber(s.number)}</span>${s.title}${s.id===next?.id?'<span class="next-tag">Next</span>':''}</label><button data-step="${s.id}">Directions</button></div>`).join(''):'<p class="empty">No checklist objective here on this leg. It may be a corridor, or a stop on the other visit.</p>'}`;
  }
 }
 function renderLedger(){
@@ -103,14 +108,21 @@ document.addEventListener('click',event=>{
  const view=event.target.closest('[data-view]');if(view)showView(view.dataset.view);
  const stage=event.target.closest('[data-jump]');if(stage)jumpToStage(stage.dataset.jump);
  const step=event.target.closest('[data-step]');if(step)jumpToStep(step.dataset.step);
- const phase=event.target.closest('[data-phase]');if(phase){state.mapPhase=phase.dataset.phase;selectedRoom=state.mapPhase==='visit-one'?'prison':'garrison';save();updateDungeon();}
+ const phase=event.target.closest('[data-phase]');if(phase){state.mapPhase=phase.dataset.phase;selectedRoom=null;save();updateDungeon();}
  const room=event.target.closest('[data-room]');if(room){selectedRoom=room.dataset.room;updateDungeon();}
  const action=event.target.closest('[data-action]');if(action){if(action.dataset.action==='export')exportProgress();if(action.dataset.action==='import')document.getElementById('import').click();if(action.dataset.action==='reset')document.getElementById('reset-dialog').showModal();}
 });
 document.addEventListener('change',event=>{if(event.target.matches('[data-check]')){const id=event.target.dataset.check,focusId=event.target.id;state.checked[id]=event.target.checked;document.querySelectorAll(`[data-check="${id}"]`).forEach(el=>{el.checked=!!state.checked[id];el.closest('.step')?.classList.toggle('done',el.checked);});save();updateProgress();if(focusId.startsWith('map-check-'))document.getElementById(focusId)?.focus({preventScroll:true});}});
 document.addEventListener('keydown',event=>{if(event.target.matches('[data-room]')&&['Enter',' '].includes(event.key)){event.preventDefault();selectedRoom=event.target.dataset.room;updateDungeon();document.querySelector(`[data-room="${selectedRoom}"]`)?.focus({preventScroll:true});}});
-document.getElementById('key-plan').addEventListener('change',event=>{state.keyPlan=event.target.value;renderDungeonChecklists();save();updateProgress();});
+document.getElementById('key-plan').addEventListener('change',event=>{state.keyPlan=event.target.value;selectedRoom=null;renderDungeonChecklists();save();updateProgress();});
 document.getElementById('run-resume').addEventListener('click',()=>{const next=activeDungeonStage().steps.find(s=>!state.checked[s.id]);if(next)jumpToStep(next.id);});
+document.getElementById('map-next').addEventListener('click',()=>{
+ const {next}=getDungeonProgress(state.mapPhase,state.keyPlan,state.checked);if(!next?.room)return;
+ selectedRoom=next.room;updateDungeon();
+ const target=document.querySelector(`[data-room="${selectedRoom}"]`);
+ target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'center',inline:'center'});
+ target.focus({preventScroll:true});
+});
 function setMapZoom(delta){mapZoom=Math.max(75,Math.min(160,mapZoom+delta));document.getElementById('zoom-value').textContent=`${mapZoom}%`;document.getElementById('dungeon-map-canvas').style.width=`${mapZoom}%`;document.getElementById('zoom-out').disabled=mapZoom===75;document.getElementById('zoom-in').disabled=mapZoom===160;}
 document.getElementById('zoom-out').addEventListener('click',()=>setMapZoom(-25));
 document.getElementById('zoom-in').addEventListener('click',()=>setMapZoom(25));

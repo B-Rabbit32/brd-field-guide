@@ -9,6 +9,7 @@ A visual WoW Forever quest guide for a level 53 Alliance human paladin, with Sto
 - A prerequisite-aware pickup route and a nine-quest entry ledger.
 - A two-visit dungeon plan: prison, personal key, lower city and bar; outside reports and ingredients; then Windsor's papers, escort and Emperor.
 - An original, clickable 25-room dungeon schematic with highlighted corridors, repeated paths, optional secret access and room objectives.
+- Map stop numbers match the selected leg's checklist, including ranges for multiple objectives in one room. A blue NEXT marker follows the earliest unchecked objective; Locate next stop centers its room. Completing or unchecking a step updates the map and checklist together.
 - A shorter first-visit variant for parties that already have a Shadowforge Key.
 - Individual objective checks, per-leg progress, notes, and JSON export/import.
 - Linked research, optional quests, profession requirements, later-level gates and disputed availability.
